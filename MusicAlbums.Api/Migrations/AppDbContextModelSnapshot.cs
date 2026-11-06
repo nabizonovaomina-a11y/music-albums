@@ -37,6 +37,9 @@ namespace MusicAlbums.Api.Migrations
                     b.Property<int>("GenreId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -51,6 +54,8 @@ namespace MusicAlbums.Api.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("GenreId");
+
+                    b.HasIndex("OwnerId");
 
                     b.ToTable("Albums");
                 });
@@ -101,6 +106,29 @@ namespace MusicAlbums.Api.Migrations
                         });
                 });
 
+            modelBuilder.Entity("MusicAlbums.Api.Models.User", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Username")
+                        .IsUnique();
+
+                    b.ToTable("Users");
+                });
+
             modelBuilder.Entity("MusicAlbums.Api.Models.Album", b =>
                 {
                     b.HasOne("MusicAlbums.Api.Models.Genre", "Genre")
@@ -109,10 +137,23 @@ namespace MusicAlbums.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("MusicAlbums.Api.Models.User", "Owner")
+                        .WithMany("Albums")
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Genre");
+
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("MusicAlbums.Api.Models.Genre", b =>
+                {
+                    b.Navigation("Albums");
+                });
+
+            modelBuilder.Entity("MusicAlbums.Api.Models.User", b =>
                 {
                     b.Navigation("Albums");
                 });

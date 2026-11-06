@@ -1,4 +1,4 @@
-namespace MusicAlbums.Api.Models;
+ namespace MusicAlbums.Api.Models;
 
 public class Album
 {
@@ -12,4 +12,7 @@ public class Album
 
     public int GenreId { get; set; }
     public Genre? Genre { get; set; }
+
+    public int OwnerId { get; set; }
+    public User? Owner { get; set; }
 }

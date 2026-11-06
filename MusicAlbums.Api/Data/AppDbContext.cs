@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+ using Microsoft.EntityFrameworkCore;
 using MusicAlbums.Api.Models;
 
 namespace MusicAlbums.Api.Data;
@@ -7,9 +7,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     public DbSet<Genre> Genres => Set<Genre>();
     public DbSet<Album> Albums => Set<Album>();
+    public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
+        b.Entity<User>(e =>
+        {
+            e.Property(x => x.Username).IsRequired().HasMaxLength(50);
+            e.HasIndex(x => x.Username).IsUnique();
+            e.Property(x => x.PasswordHash).IsRequired();
+        });
+
         b.Entity<Genre>(e =>
         {
             e.Property(x => x.Name).IsRequired().HasMaxLength(50);
@@ -31,6 +39,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
              .WithMany(g => g.Albums)
              .HasForeignKey(x => x.GenreId)
              .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Owner)
+             .WithMany(u => u.Albums)
+             .HasForeignKey(x => x.OwnerId)
+             .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
