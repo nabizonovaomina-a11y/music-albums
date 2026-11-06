@@ -1,5 +1,6 @@
  using Microsoft.EntityFrameworkCore;
 using MusicAlbums.Api.Data;
+using MusicAlbums.Api.Endpoints;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,5 +18,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.MapAlbumEndpoints();
 
 app.Run();
