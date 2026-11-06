@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using MusicAlbums.Api.Data;
 using MusicAlbums.Api.Dtos;
 using MusicAlbums.Api.Models;
+using MusicAlbums.Api.Filters;
 
 namespace MusicAlbums.Api.Endpoints;
 
@@ -9,7 +10,9 @@ public static class AlbumEndpoints
 {
     public static void MapAlbumEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("/api/albums").WithTags("Albums");
+var group = app.MapGroup("/api/albums")
+    .WithTags("Albums")
+    .AddEndpointFilter<ValidationFilter<AlbumRequest>>();
 
         // GET list -> 200
         group.MapGet("/", async (AppDbContext db) =>

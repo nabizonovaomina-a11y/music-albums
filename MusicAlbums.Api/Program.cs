@@ -2,10 +2,13 @@
 using MusicAlbums.Api.Data;
 using MusicAlbums.Api.Endpoints;
 using Scalar.AspNetCore;
+using FluentValidation;
+using MusicAlbums.Api.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
+builder.Services.AddValidatorsFromAssemblyContaining<AlbumRequestValidator>();
 builder.Services.AddDbContext<AppDbContext>(o =>
     o.UseSqlite(builder.Configuration.GetConnectionString("Default")));
 
