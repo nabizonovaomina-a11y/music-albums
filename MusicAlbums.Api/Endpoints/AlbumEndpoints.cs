@@ -15,15 +15,43 @@ public static class AlbumEndpoints
             .WithTags("Albums")
             .AddEndpointFilter<ValidationFilter<AlbumRequest>>();
 
-        // GET list -> 200 (hamma uchun ochiq)
-        group.MapGet("/", async (AppDbContext db) =>
+        // GET list -> 200 (sahifalash, filtr, saralash)
+        group.MapGet("/", async ([AsParameters] AlbumQuery q, AppDbContext db) =>
         {
-            var albums = await db.Albums
-                .AsNoTracking()
-                .Include(a => a.Genre)
-                .OrderBy(a => a.Id)
+            var page = Math.Max(q.Page ?? 1, 1);
+            var pageSize = Math.Clamp(q.PageSize ?? 10, 1, 50);
+
+            var query = db.Albums.AsNoTracking().Include(a => a.Genre).AsQueryable();
+
+            // Filtrlar
+            if (q.GenreId is not null)
+                query = query.Where(a => a.GenreId == q.GenreId);
+            if (!string.IsNullOrWhiteSpace(q.Artist))
+                query = query.Where(a => EF.Functions.Like(a.Artist, $"%{q.Artist.Trim()}%"));
+            if (q.Year is not null)
+                query = query.Where(a => a.Year == q.Year);
+
+            // Saralash: sort=year yoki sort=duration, dir=asc yoki desc
+            var desc = string.Equals(q.Dir, "desc", StringComparison.OrdinalIgnoreCase);
+            query = q.Sort?.ToLowerInvariant() switch
+            {
+                "year" => desc
+                    ? query.OrderByDescending(a => a.Year).ThenBy(a => a.Id)
+                    : query.OrderBy(a => a.Year).ThenBy(a => a.Id),
+                "duration" => desc
+                    ? query.OrderByDescending(a => a.DurationMinutes).ThenBy(a => a.Id)
+                    : query.OrderBy(a => a.DurationMinutes).ThenBy(a => a.Id),
+                _ => query.OrderBy(a => a.Id)
+            };
+
+            var total = await query.CountAsync();
+            var items = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
-            return Results.Ok(albums.Select(ToDto));
+
+            return Results.Ok(new PagedResult<AlbumDto>(
+                items.Select(ToDto).ToList(), page, pageSize, total));
         });
 
         // GET by id -> 200 / 404 (hamma uchun ochiq)

@@ -10,4 +10,11 @@ public record AlbumDto(
 // POST va PUT uchun
 public record AlbumRequest(
     string Title, string Artist, int Year,
-    int TrackCount, int DurationMinutes, int GenreId);  
+    int TrackCount, int DurationMinutes, int GenreId);
+
+// GET list uchun: filtr, saralash, sahifalash
+public record AlbumQuery(
+    int? GenreId, string? Artist, int? Year,
+    string? Sort, string? Dir, int? Page, int? PageSize);
+
+public record PagedResult<T>(IReadOnlyList<T> Items, int Page, int PageSize, int Total);
