@@ -1,6 +1,83 @@
-@MusicAlbums.Api_HostAddress = http://localhost:5161
+ @host = http://localhost:5161
+@tokenTest = {{loginTest.response.body.$.token}}
+@tokenTest2 = {{loginTest2.response.body.$.token}}
 
-GET {{MusicAlbums.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+### 1. Ro'yxatdan o'tish (test)
+POST {{host}}/api/auth/register
+Content-Type: application/json
 
-###
+{ "username": "test", "password": "123456" }
+
+### 2. Ro'yxatdan o'tish (test2)
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{ "username": "test2", "password": "123456" }
+
+### 3. Kirish (test) -> 200
+# @name loginTest
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{ "username": "test", "password": "123456" }
+
+### 4. Kirish (test2) -> 200
+# @name loginTest2
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{ "username": "test2", "password": "123456" }
+
+### 5. Noto'g'ri parol -> 401
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{ "username": "test", "password": "wrong" }
+
+### 6. Albomlar ro'yxati -> 200
+GET {{host}}/api/albums
+
+### 7. Tokensiz albom yaratish -> 401
+POST {{host}}/api/albums
+Content-Type: application/json
+
+{ "title": "Thriller", "artist": "Michael Jackson", "year": 1982,
+  "trackCount": 9, "durationMinutes": 42, "genreId": 2 }
+
+### 8. Token bilan albom yaratish -> 201
+POST {{host}}/api/albums
+Content-Type: application/json
+Authorization: Bearer {{tokenTest}}
+
+{ "title": "Thriller", "artist": "Michael Jackson", "year": 1982,
+  "trackCount": 9, "durationMinutes": 42, "genreId": 2 }
+
+### 9. Validatsiya xatosi (davomiylik < treklar soni) -> 400
+POST {{host}}/api/albums
+Content-Type: application/json
+Authorization: Bearer {{tokenTest}}
+
+{ "title": "Test", "artist": "Test", "year": 2020,
+  "trackCount": 9, "durationMinutes": 5, "genreId": 2 }
+
+### 10. Bitta albom -> 200
+GET {{host}}/api/albums/1
+
+### 11. Boshqa foydalanuvchi o'chirmoqchi -> 403
+DELETE {{host}}/api/albums/1
+Authorization: Bearer {{tokenTest2}}
+
+### 12. Muallif o'zgartiradi -> 204
+PUT {{host}}/api/albums/1
+Content-Type: application/json
+Authorization: Bearer {{tokenTest}}
+
+{ "title": "Thriller (Deluxe)", "artist": "Michael Jackson", "year": 1982,
+  "trackCount": 9, "durationMinutes": 45, "genreId": 2 }
+
+### 13. Muallif o'chiradi -> 204
+DELETE {{host}}/api/albums/1
+Authorization: Bearer {{tokenTest}}
+
+### 14. Mavjud emas -> 404
+GET {{host}}/api/albums/999

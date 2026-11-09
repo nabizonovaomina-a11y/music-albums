@@ -1,8 +1,9 @@
+ using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using MusicAlbums.Api.Data;
 using MusicAlbums.Api.Dtos;
-using MusicAlbums.Api.Models;
 using MusicAlbums.Api.Filters;
+using MusicAlbums.Api.Models;
 
 namespace MusicAlbums.Api.Endpoints;
 
@@ -10,11 +11,11 @@ public static class AlbumEndpoints
 {
     public static void MapAlbumEndpoints(this WebApplication app)
     {
-var group = app.MapGroup("/api/albums")
-    .WithTags("Albums")
-    .AddEndpointFilter<ValidationFilter<AlbumRequest>>();
+        var group = app.MapGroup("/api/albums")
+            .WithTags("Albums")
+            .AddEndpointFilter<ValidationFilter<AlbumRequest>>();
 
-        // GET list -> 200
+        // GET list -> 200 (hamma uchun ochiq)
         group.MapGet("/", async (AppDbContext db) =>
         {
             var albums = await db.Albums
@@ -25,7 +26,7 @@ var group = app.MapGroup("/api/albums")
             return Results.Ok(albums.Select(ToDto));
         });
 
-        // GET by id -> 200 / 404
+        // GET by id -> 200 / 404 (hamma uchun ochiq)
         group.MapGet("/{id:int}", async (int id, AppDbContext db) =>
         {
             var album = await db.Albums
@@ -35,8 +36,8 @@ var group = app.MapGroup("/api/albums")
             return album is null ? Results.NotFound() : Results.Ok(ToDto(album));
         });
 
-        // POST -> 201 / 400
-        group.MapPost("/", async (AlbumRequest req, AppDbContext db) =>
+        // POST -> 201 / 400 / 401 (faqat kirgan foydalanuvchi)
+        group.MapPost("/", async (AlbumRequest req, ClaimsPrincipal user, AppDbContext db) =>
         {
             if (!await db.Genres.AnyAsync(g => g.Id == req.GenreId))
                 return GenreNotFound();
@@ -48,20 +49,22 @@ var group = app.MapGroup("/api/albums")
                 Year = req.Year,
                 TrackCount = req.TrackCount,
                 DurationMinutes = req.DurationMinutes,
-                GenreId = req.GenreId
+                GenreId = req.GenreId,
+                OwnerId = GetUserId(user)
             };
             db.Albums.Add(album);
             await db.SaveChangesAsync();
             await db.Entry(album).Reference(a => a.Genre).LoadAsync();
 
             return Results.Created($"/api/albums/{album.Id}", ToDto(album));
-        });
+        }).RequireAuthorization();
 
-        // PUT -> 204 / 400 / 404
-        group.MapPut("/{id:int}", async (int id, AlbumRequest req, AppDbContext db) =>
+        // PUT -> 204 / 400 / 401 / 403 / 404 (faqat muallif)
+        group.MapPut("/{id:int}", async (int id, AlbumRequest req, ClaimsPrincipal user, AppDbContext db) =>
         {
             var album = await db.Albums.FindAsync(id);
             if (album is null) return Results.NotFound();
+            if (album.OwnerId != GetUserId(user)) return NotOwner();
 
             if (!await db.Genres.AnyAsync(g => g.Id == req.GenreId))
                 return GenreNotFound();
@@ -75,23 +78,39 @@ var group = app.MapGroup("/api/albums")
             await db.SaveChangesAsync();
 
             return Results.NoContent();
-        });
+        }).RequireAuthorization();
 
-        // DELETE -> 204 / 404
-        group.MapDelete("/{id:int}", async (int id, AppDbContext db) =>
+        // DELETE -> 204 / 401 / 403 / 404 (faqat muallif)
+        group.MapDelete("/{id:int}", async (int id, ClaimsPrincipal user, AppDbContext db) =>
         {
             var album = await db.Albums.FindAsync(id);
             if (album is null) return Results.NotFound();
+            if (album.OwnerId != GetUserId(user)) return NotOwner();
 
             db.Albums.Remove(album);
             await db.SaveChangesAsync();
             return Results.NoContent();
-        });
+        }).RequireAuthorization();
+    }
+
+    // Tokendagi foydalanuvchi id sini oladi
+    private static int GetUserId(ClaimsPrincipal user)
+    {
+        var value = user.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? user.FindFirstValue("nameid")
+                    ?? user.FindFirstValue("sub");
+        return int.Parse(value!);
     }
 
     private static AlbumDto ToDto(Album a) => new(
         a.Id, a.Title, a.Artist, a.Year, a.TrackCount, a.DurationMinutes,
-        a.GenreId, a.Genre?.Name ?? "", a.CoverFileName);
+        a.GenreId, a.Genre?.Name ?? "", a.CoverFileName, a.OwnerId);
+
+    private static IResult NotOwner() =>
+        Results.Problem(
+            statusCode: StatusCodes.Status403Forbidden,
+            title: "Forbidden",
+            detail: "Faqat albom muallifi o'zgartira yoki o'chira oladi.");
 
     private static IResult GenreNotFound() =>
         Results.ValidationProblem(new Dictionary<string, string[]>
