@@ -485,3 +485,5 @@ $RECYCLE.BIN/
 *.db-shm
 *.db-wal
 MusicAlbums.Api/uploads/
+
+MusicAlbums.Api/cover.png
