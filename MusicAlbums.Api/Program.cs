@@ -3,6 +3,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using MusicAlbums.Api.Data;
 using MusicAlbums.Api.Endpoints;
@@ -44,6 +45,10 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+// Yuklangan fayllar uchun papka
+var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "uploads");
+Directory.CreateDirectory(uploadsPath);
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -51,10 +56,16 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(uploadsPath),
+    RequestPath = "/uploads"
+});
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapAuthEndpoints();
 app.MapAlbumEndpoints();
+app.MapCoverEndpoints();
 
 app.Run();

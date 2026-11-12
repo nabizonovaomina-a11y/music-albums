@@ -132,7 +132,8 @@ public static class AlbumEndpoints
 
     private static AlbumDto ToDto(Album a) => new(
         a.Id, a.Title, a.Artist, a.Year, a.TrackCount, a.DurationMinutes,
-        a.GenreId, a.Genre?.Name ?? "", a.CoverFileName, a.OwnerId);
+                a.GenreId, a.Genre?.Name ?? "",
+        a.CoverFileName is null ? null : "/uploads/" + a.CoverFileName, a.OwnerId);
 
     private static IResult NotOwner() =>
         Results.Problem(

@@ -2,13 +2,13 @@
 @tokenTest = {{loginTest.response.body.$.token}}
 @tokenTest2 = {{loginTest2.response.body.$.token}}
 
-### 1. Ro'yxatdan o'tish (test)
+### 1. Ro'yxatdan o'tish (test) -> 201
 POST {{host}}/api/auth/register
 Content-Type: application/json
 
 { "username": "test", "password": "123456" }
 
-### 2. Ro'yxatdan o'tish (test2)
+### 2. Ro'yxatdan o'tish (test2) -> 201
 POST {{host}}/api/auth/register
 Content-Type: application/json
 
@@ -64,24 +64,41 @@ Authorization: Bearer {{tokenTest}}
 ### 10. Oxirgi yaratilgan albom -> 200
 GET {{host}}/api/albums/{{createAlbum.response.body.$.id}}
 
-### 11. Boshqa foydalanuvchi o'chirmoqchi -> 403
+### 11. Muqova yuklash -> 200
+POST {{host}}/api/albums/{{createAlbum.response.body.$.id}}/cover
+Authorization: Bearer {{tokenTest}}
+Content-Type: multipart/form-data; boundary=----Boundary
+
+------Boundary
+Content-Disposition: form-data; name="file"; filename="cover.png"
+Content-Type: image/png
+
+< ./cover.png
+------Boundary--
+
+### 12. Boshqa foydalanuvchi muqova yuklamoqchi -> 403
+POST {{host}}/api/albums/{{createAlbum.response.body.$.id}}/cover
+Authorization: Bearer {{tokenTest2}}
+Content-Type: multipart/form-data; boundary=----Boundary
+
+------Boundary
+Content-Disposition: form-data; name="file"; filename="cover.png"
+Content-Type: image/png
+
+< ./cover.png
+------Boundary--
+
+### 13. Boshqa foydalanuvchi o'chirmoqchi -> 403
 DELETE {{host}}/api/albums/{{createAlbum.response.body.$.id}}
 Authorization: Bearer {{tokenTest2}}
 
-### 12. Muallif o'zgartiradi -> 204
+### 14. Muallif o'zgartiradi -> 204
 PUT {{host}}/api/albums/{{createAlbum.response.body.$.id}}
 Content-Type: application/json
 Authorization: Bearer {{tokenTest}}
 
 { "title": "Thriller (Deluxe)", "artist": "Michael Jackson", "year": 1982,
   "trackCount": 9, "durationMinutes": 45, "genreId": 2 }
-
-### 13. Muallif o'chiradi -> 204
-DELETE {{host}}/api/albums/{{createAlbum.response.body.$.id}}
-Authorization: Bearer {{tokenTest}}
-
-### 14. Mavjud emas -> 404
-GET {{host}}/api/albums/999999
 
 ### 15. Sahifalash -> 200
 GET {{host}}/api/albums?page=1&pageSize=2
@@ -100,3 +117,10 @@ GET {{host}}/api/albums?sort=year&dir=desc
 
 ### 20. Saralash: davomiylik bo'yicha o'sish -> 200
 GET {{host}}/api/albums?sort=duration&dir=asc
+
+### 21. Muallif albomni o'chiradi (eng oxirida yuboring) -> 204
+DELETE {{host}}/api/albums/{{createAlbum.response.body.$.id}}
+Authorization: Bearer {{tokenTest}}
+
+### 22. Mavjud emas -> 404
+GET {{host}}/api/albums/999999
