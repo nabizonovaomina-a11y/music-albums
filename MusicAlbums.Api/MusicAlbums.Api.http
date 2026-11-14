@@ -34,17 +34,20 @@ Content-Type: application/json
 
 { "username": "test", "password": "wrong" }
 
-### 6. Albomlar ro'yxati -> 200
+### 6. Janrlar ro'yxati -> 200
+GET {{host}}/api/genres
+
+### 7. Albomlar ro'yxati -> 200
 GET {{host}}/api/albums
 
-### 7. Tokensiz albom yaratish -> 401
+### 8. Tokensiz albom yaratish -> 401
 POST {{host}}/api/albums
 Content-Type: application/json
 
 { "title": "Thriller", "artist": "Michael Jackson", "year": 1982,
   "trackCount": 9, "durationMinutes": 42, "genreId": 2 }
 
-### 8. Token bilan albom yaratish -> 201
+### 9. Token bilan albom yaratish -> 201
 # @name createAlbum
 POST {{host}}/api/albums
 Content-Type: application/json
@@ -53,7 +56,7 @@ Authorization: Bearer {{tokenTest}}
 { "title": "Thriller", "artist": "Michael Jackson", "year": 1982,
   "trackCount": 9, "durationMinutes": 42, "genreId": 2 }
 
-### 9. Validatsiya xatosi (davomiylik < treklar soni) -> 400
+### 10. Validatsiya xatosi (davomiylik < treklar soni) -> 400
 POST {{host}}/api/albums
 Content-Type: application/json
 Authorization: Bearer {{tokenTest}}
@@ -61,10 +64,10 @@ Authorization: Bearer {{tokenTest}}
 { "title": "Test", "artist": "Test", "year": 2020,
   "trackCount": 9, "durationMinutes": 5, "genreId": 2 }
 
-### 10. Oxirgi yaratilgan albom -> 200
+### 11. Oxirgi yaratilgan albom -> 200
 GET {{host}}/api/albums/{{createAlbum.response.body.$.id}}
 
-### 11. Muqova yuklash -> 200
+### 12. Muqova yuklash (cover.png fayli shu papkada bo'lishi kerak) -> 200
 POST {{host}}/api/albums/{{createAlbum.response.body.$.id}}/cover
 Authorization: Bearer {{tokenTest}}
 Content-Type: multipart/form-data; boundary=----Boundary
@@ -76,7 +79,7 @@ Content-Type: image/png
 < ./cover.png
 ------Boundary--
 
-### 12. Boshqa foydalanuvchi muqova yuklamoqchi -> 403
+### 13. Boshqa foydalanuvchi muqova yuklamoqchi -> 403
 POST {{host}}/api/albums/{{createAlbum.response.body.$.id}}/cover
 Authorization: Bearer {{tokenTest2}}
 Content-Type: multipart/form-data; boundary=----Boundary
@@ -88,11 +91,11 @@ Content-Type: image/png
 < ./cover.png
 ------Boundary--
 
-### 13. Boshqa foydalanuvchi o'chirmoqchi -> 403
+### 14. Boshqa foydalanuvchi o'chirmoqchi -> 403
 DELETE {{host}}/api/albums/{{createAlbum.response.body.$.id}}
 Authorization: Bearer {{tokenTest2}}
 
-### 14. Muallif o'zgartiradi -> 204
+### 15. Muallif o'zgartiradi -> 204
 PUT {{host}}/api/albums/{{createAlbum.response.body.$.id}}
 Content-Type: application/json
 Authorization: Bearer {{tokenTest}}
@@ -100,27 +103,27 @@ Authorization: Bearer {{tokenTest}}
 { "title": "Thriller (Deluxe)", "artist": "Michael Jackson", "year": 1982,
   "trackCount": 9, "durationMinutes": 45, "genreId": 2 }
 
-### 15. Sahifalash -> 200
+### 16. Sahifalash -> 200
 GET {{host}}/api/albums?page=1&pageSize=2
 
-### 16. Filtr: janr -> 200
+### 17. Filtr: janr -> 200
 GET {{host}}/api/albums?genreId=2
 
-### 17. Filtr: ijrochi -> 200
+### 18. Filtr: ijrochi -> 200
 GET {{host}}/api/albums?artist=jackson
 
-### 18. Filtr: yil -> 200
+### 19. Filtr: yil -> 200
 GET {{host}}/api/albums?year=1982
 
-### 19. Saralash: yil bo'yicha kamayish -> 200
+### 20. Saralash: yil bo'yicha kamayish -> 200
 GET {{host}}/api/albums?sort=year&dir=desc
 
-### 20. Saralash: davomiylik bo'yicha o'sish -> 200
+### 21. Saralash: davomiylik bo'yicha o'sish -> 200
 GET {{host}}/api/albums?sort=duration&dir=asc
 
-### 21. Muallif albomni o'chiradi (eng oxirida yuboring) -> 204
+### 22. Muallif albomni o'chiradi (eng oxirida yuboring) -> 204
 DELETE {{host}}/api/albums/{{createAlbum.response.body.$.id}}
 Authorization: Bearer {{tokenTest}}
 
-### 22. Mavjud emas -> 404
+### 23. Mavjud emas -> 404
 GET {{host}}/api/albums/999999
